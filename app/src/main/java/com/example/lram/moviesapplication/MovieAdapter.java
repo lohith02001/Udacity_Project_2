@@ -1,29 +1,28 @@
 package com.example.lram.moviesapplication;
 
 import android.content.Context;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
-
 import com.example.lram.moviesapplication.model.Result;
+import com.example.lram.moviesapplication.network.MovieAppUtils;
 import com.squareup.picasso.Picasso;
-
 import java.util.List;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHolder> {
-    static final String POSTER_BASE_URL = "http://image.tmdb.org/t/p/";
-    static final String POSTER_SIZE = "w185";
 
+    private final MovieAdapterOnClickHandler mMovieAdapterClickHandler;
     private List<Result> mMoviesList;
 
-    public MovieAdapter(List<Result> movieList)
-    {
-        this.mMoviesList = movieList;
+    public MovieAdapter(MovieAdapterOnClickHandler mMovieAdapterClickHandler) {
+        this.mMovieAdapterClickHandler = mMovieAdapterClickHandler;
+    }
+
+    public interface MovieAdapterOnClickHandler {
+        void onMovieClick(Result result);
     }
 
     @NonNull
@@ -37,42 +36,38 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
     @Override
     public void onBindViewHolder(@NonNull MovieViewHolder movieViewHolder, int position) {
         Result result = mMoviesList.get(position);
-        String posterPath = createPosterPath(result.getPosterPath());
-        Picasso.get().load(posterPath).into(movieViewHolder.moviePoster);
-        //Picasso.get().load(posterPath).resize(100,100).into(movieViewHolder.moviePoster);
-        //movieViewHolder.moviePoster.setImageURI(Uri.parse(posterPath));
-        //movieViewHolder.moviePoster.setText(posterPath);
+        String posterPath = MovieAppUtils.createImagePath(result.getPosterPath(), MovieAppUtils.POSTER_SIZE);
+        Picasso.get().load(posterPath).fit().into(movieViewHolder.moviePoster);
     }
 
     @Override
     public int getItemCount() {
 
-        if(mMoviesList == null)
+        if (mMoviesList == null)
             return 0;
         return mMoviesList.size();
     }
 
-    public class MovieViewHolder extends RecyclerView.ViewHolder{
+    public class MovieViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         ImageView moviePoster;
+
         public MovieViewHolder(@NonNull View itemView) {
             super(itemView);
             moviePoster = itemView.findViewById(R.id.movie_poster);
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View view) {
+            int adapterPosition = getAdapterPosition();
+            Result result = mMoviesList.get(adapterPosition);
+            mMovieAdapterClickHandler.onMovieClick(result);
         }
     }
 
-    public void updateLists(List<Result> updatedList)
-    {
+    public void updateLists(List<Result> updatedList) {
         mMoviesList = updatedList;
         notifyDataSetChanged();
-    }
-
-    public String createPosterPath(String posterPath)
-    {
-        StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append(POSTER_BASE_URL);
-        stringBuffer.append(POSTER_SIZE);
-        stringBuffer.append(posterPath);
-        return stringBuffer.toString();
     }
 
 }
